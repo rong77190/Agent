@@ -36,18 +36,8 @@ public class TemplateAgent2 extends Agent {
             public void action() {
                 ACLMessage msg = receive(mt1);
                 if (msg != null){
-                    String sender = msg.getSender().getLocalName();
-                    char num1 = sender.charAt(sender.length()-1);
-
-                    String receiver = getAID().getLocalName();
-                    char num2 = receiver.charAt(receiver.length()-1);
-                    if (num1 == num2){
-                        System.out.println("gets "+msg.getPerformative()+" from "
-                                +msg.getSender().getLocalName()+"= "+msg.getContent());
-                    }
-                    else{
-                        System.out.println(" Over ");
-                    }
+                    System.out.println(getAID().getLocalName()+"gets "+msg.getPerformative()+" from "
+                                +msg.getSender().getLocalName()+"="+msg.getContent());
                 }else {
                     System.out.println("gets null ");
                     block();

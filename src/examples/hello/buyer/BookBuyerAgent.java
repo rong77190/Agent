@@ -7,10 +7,11 @@ package examples.hello.buyer;
 
 import jade.core.*;
 import jade.core.behaviours.*;
-import jade.lang.acl.*;
 
 import jade.domain.*;
 import jade.domain.FIPAAgentManagement.*;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 
 import java.util.Vector;
 import java.util.Date;
@@ -56,7 +57,7 @@ public class BookBuyerAgent extends Agent {
         //search sellers with DF
         DFAgentDescription df = new DFAgentDescription();
         ServiceDescription service = new ServiceDescription();
-        service.setType("book-trade");
+        service.setType("book-selling");
         df.addServices(service);
         try {
           DFAgentDescription[] result = DFService.search(getAgent(),
@@ -149,17 +150,71 @@ public class BookBuyerAgent extends Agent {
   **/
   private class BookNegotiator extends Behaviour {
     //......
+    private String title;
+    private int maxPrice;
+    private PurchaseManager purchaseManager;
+    private AID bestSeller;// seller who offer best price
+    private int bestPrice;
+    private int repliesCnt = 0;//reply times of seller agent
+    private MessageTemplate mt;
     private
 	  int step = 0;
 
     public BookNegotiator(String t, int p, PurchaseManager m) {
-      //...........
+      //init
       super(null);
-
+      title = t;
+      maxPrice = p;
+      m = purchaseManager;
     }
 
     public void action() {
-    //.......
+
+      switch (step){
+        case 0:
+          //send  CFP to all Sellers agent
+          ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+          for (int i = 0; i < sellerAgents.size();i++){
+            cfp.addReceiver((AID) sellerAgents.elementAt(i));
+          }
+          cfp.setContent(title);
+          cfp.setConversationId("book-selling");
+          cfp.setReplyWith("cfp"+System.currentTimeMillis());
+          myAgent.send(cfp);
+          myGui.notifyUser("Sent Call for Proposal");
+          mt = MessageTemplate.and(
+                  MessageTemplate.MatchConversationId("book-selling"),
+                  MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
+          step = 1;
+          break;
+        case 1:
+          //collect the reply of seller agent by REFUSE  or PROPOSE
+          //record the info of seller agent which offer the bestPrice
+          ACLMessage reply = myAgent.receive(mt);
+          if (reply != null){
+            if (reply.getPerformative() == ACLMessage.ACCEPT_PROPOSAL){
+              int price = Integer.parseInt(reply.getContent());
+              myGui.notifyUser("Received Proposal at " + price
+                      + " when maximum acceptable price was "
+                      + maxPrice);
+              if (bestSeller == null || price < bestPrice) {
+                // This is the best offer at present
+                bestPrice = price;
+                bestSeller = reply.getSender();
+              }
+            }
+            repliesCnt++;
+            if (repliesCnt >= sellerAgents.size()){
+              step = 2;
+            }
+
+          }else {
+            block();
+          }
+//        case 2:
+      }
+
+
     }
 
     public boolean done() {
