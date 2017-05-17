@@ -14,7 +14,6 @@ import jade.lang.acl.MessageTemplate;
  */
 public class TemplateAgent2 extends Agent {
 
-
     MessageTemplate mt1 = null;
     protected void setup(){
         String alice = null;
