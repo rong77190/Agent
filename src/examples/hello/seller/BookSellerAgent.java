@@ -20,6 +20,8 @@ public class BookSellerAgent extends Agent {
   // The GUI to interact with the user
   private BookSellerGui myGui;
 
+  public static final String SERVICE_NAME = "sell_service";
+
   /**
    * Agent initializations
   **/
@@ -43,8 +45,22 @@ public class BookSellerAgent extends Agent {
     **/
     // Register the book-selling service in the yellow pages
     /*DFAgentDescription dfd = new DFAgentDescription()........*/
+    registerService();
   }
 
+  public void registerService(){
+    DFAgentDescription df = new DFAgentDescription();
+    df.setName(getAID());
+    ServiceDescription sd = new ServiceDescription();
+    sd.setName(SERVICE_NAME);
+    sd.setType("book-selling");
+    df.addServices(sd);
+    try {
+      DFService.register(this,df);
+    }catch (FIPAException e){
+      e.printStackTrace();
+    }
+  }
   /**
    * Agent clean-up
   **/
@@ -62,13 +78,18 @@ public class BookSellerAgent extends Agent {
     **/
     // Deregister from the yellow pages
     /*try {........*/
+    try {
+      DFService.deregister(this);
+    }catch (FIPAException e){
+      e.printStackTrace();
+    }
   }
 
   /**
    * This method is called by the GUI when the user inserts a new
    * book for sale
    * @param title The title of the book for sale
-   * @param initialPrice The initial price
+//   * @param initialPrice The initial price
    * @param minPrice The minimum price
    * @param deadline The deadline by which to sell the book
   **/
@@ -167,9 +188,29 @@ public class BookSellerAgent extends Agent {
   purchase has been sucesfully completed.
 */
 private class PurchaseOrderServer extends CyclicBehaviour {
+      private MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
+
 	public void action() {
 		/* MessageTemplate mt = ........*/
+      ACLMessage msg = myAgent.receive(mt);
+      if (msg != null){
+        String title = msg.getContent();
+        myGui.notifyUser("Received ACCEPT_PROPOSAL to purchase "+title);
+        ACLMessage reply = msg.createReply();
+        PriceManager manager = (PriceManager)catalogue.get(title);
+        if (manager != null){
+          catalogue.remove(title);
+          reply.setPerformative(ACLMessage.INFORM);
+          manager.stop();
+        }else {
+          reply.setPerformative(ACLMessage.FAILURE);
+        }
+        myAgent.send(reply);
+      myGui.notifyUser(manager != null ? "The Book "+title+
+      " has been sold at price ="+manager.getCurrentPrice():" The Book is not exist");
+      }else {
+        block();
+      }
 	}
 }  // End of inner class PurchaseOrdersServer
-
 }

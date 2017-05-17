@@ -211,10 +211,35 @@ public class BookBuyerAgent extends Agent {
           }else {
             block();
           }
-//        case 2:
+        case 2:
+          if (bestSeller != null && bestPrice <= maxPrice){
+            //send  the purchase to the seller that provided the best offer
+            ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+            order.addReceiver(bestSeller);
+            order.setContent(title);
+            order.setConversationId("book-selling");
+            order.setReplyWith("order"+System.currentTimeMillis());
+            myAgent.send(order);
+            myGui.notifyUser("sned Accept Proposal");
+            mt = MessageTemplate.and(MessageTemplate.MatchConversationId("book-selling"),MessageTemplate.MatchInReplyTo(order.getReplyWith()));
+            step = 3;
+          }else {
+            step = 4;
+          }
+
+        case 3:
+          reply = myAgent.receive(mt);
+          if(reply != null){
+            if (reply.getPerformative() == ACLMessage.INFORM){
+              myGui.notifyUser("Book "+ title + " successful purchase  price = "+ bestPrice);
+              purchaseManager.stop();
+            }
+            step = 4;
+          }else {
+            block();
+          }
+          break;
       }
-
-
     }
 
     public boolean done() {
