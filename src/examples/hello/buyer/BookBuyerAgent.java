@@ -57,7 +57,7 @@ public class BookBuyerAgent extends Agent {
         //search sellers with DF
         DFAgentDescription df = new DFAgentDescription();
         ServiceDescription service = new ServiceDescription();
-        service.setType("book-selling");
+        service.setType("book-trade");
         df.addServices(service);
         try {
           DFAgentDescription[] result = DFService.search(getAgent(),
@@ -127,14 +127,16 @@ public class BookBuyerAgent extends Agent {
       long currentTime = System.currentTimeMillis();
       if (currentTime > deadline) {
         // Deadline expired
-        myGui.notifyUser("Cannot buy book "+title);
+        myGui.notifyUser("Cannot buy book :"+title);
         stop();
       }
       else {
         // Compute the currently acceptable price and start a negotiation
         long elapsedTime = currentTime - initTime;
         int acceptablePrice = (int)Math.round(1.0 * maxPrice * (1.0 * elapsedTime / deltaT));
-        // System.out.println("elapsedTime"+elapsedTime+"deltaT"+deltaT+"acceptablePrice"+acceptablePrice+"maxPrice="+maxPrice);
+
+         System.out.println("elapsedTime:"+elapsedTime+" deltaT "+deltaT+"  acceptablePrice  "+
+                 acceptablePrice+" maxPrice="+maxPrice);
         myAgent.addBehaviour(new BookNegotiator(title, acceptablePrice, this));
       }
     }
@@ -157,8 +159,7 @@ public class BookBuyerAgent extends Agent {
     private int bestPrice;
     private int repliesCnt = 0;//reply times of seller agent
     private MessageTemplate mt;
-    private
-	  int step = 0;
+    private int step = 0;
 
     public BookNegotiator(String t, int p, PurchaseManager m) {
       //init
@@ -178,12 +179,13 @@ public class BookBuyerAgent extends Agent {
             cfp.addReceiver((AID) sellerAgents.elementAt(i));
           }
           cfp.setContent(title);
-          cfp.setConversationId("book-selling");
+//          cfp.setPostTimeStamp();
+          cfp.setConversationId("book-trade");
           cfp.setReplyWith("cfp"+System.currentTimeMillis());
           myAgent.send(cfp);
           myGui.notifyUser("Sent Call for Proposal");
           mt = MessageTemplate.and(
-                  MessageTemplate.MatchConversationId("book-selling"),
+                  MessageTemplate.MatchConversationId("book-trade"),
                   MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
           step = 1;
           break;
@@ -192,7 +194,7 @@ public class BookBuyerAgent extends Agent {
           //record the info of seller agent which offer the bestPrice
           ACLMessage reply = myAgent.receive(mt);
           if (reply != null){
-            if (reply.getPerformative() == ACLMessage.ACCEPT_PROPOSAL){
+            if (reply.getPerformative() == ACLMessage.PROPOSE){
               int price = Integer.parseInt(reply.getContent());
               myGui.notifyUser("Received Proposal at " + price
                       + " when maximum acceptable price was "
@@ -217,11 +219,11 @@ public class BookBuyerAgent extends Agent {
             ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
             order.addReceiver(bestSeller);
             order.setContent(title);
-            order.setConversationId("book-selling");
+            order.setConversationId("book-trade");
             order.setReplyWith("order"+System.currentTimeMillis());
             myAgent.send(order);
-            myGui.notifyUser("sned Accept Proposal");
-            mt = MessageTemplate.and(MessageTemplate.MatchConversationId("book-selling"),MessageTemplate.MatchInReplyTo(order.getReplyWith()));
+            myGui.notifyUser("send Accept Proposal");
+            mt = MessageTemplate.and(MessageTemplate.MatchConversationId("book-trade"),MessageTemplate.MatchInReplyTo(order.getReplyWith()));
             step = 3;
           }else {
             step = 4;

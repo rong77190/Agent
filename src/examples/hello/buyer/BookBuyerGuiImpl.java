@@ -239,7 +239,7 @@ public class BookBuyerGuiImpl extends JFrame implements BookBuyerGui {
 		resetB.addActionListener(new ActionListener(){
 	  	public void actionPerformed(ActionEvent e) {
 	  		titleTF.setText("");
-	  		desiredCostTF.setText("");
+//	  		desiredCostTF.setText("");
 	  		maxCostTF.setText("");
 	  		deadlineTF.setText("");
 	  		deadline = null;

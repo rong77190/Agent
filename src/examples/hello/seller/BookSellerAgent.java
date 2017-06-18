@@ -53,7 +53,7 @@ public class BookSellerAgent extends Agent {
     df.setName(getAID());
     ServiceDescription sd = new ServiceDescription();
     sd.setName(SERVICE_NAME);
-    sd.setType("book-selling");
+    sd.setType("book-trade");
     df.addServices(sd);
     try {
       DFService.register(this,df);
